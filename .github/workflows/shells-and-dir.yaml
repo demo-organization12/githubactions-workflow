@@ -3,7 +3,7 @@ on: [push]
 
 jobs:
     display-wd-info-in-linux:
-        name: ubuntu-commands
+        #name: ubuntu-commands
         runs-on: ubuntu-latest
         steps:
         - name: Display Working Directory and List Files
