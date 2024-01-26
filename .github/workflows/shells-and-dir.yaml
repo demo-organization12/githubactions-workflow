@@ -15,7 +15,7 @@ jobs:
             echo $GITHUB_WORKSPACE
 
     display-wd-info-in-windows:
-        name: ubuntu-commands
+        name: windows-commands
         runs-on: windows-latest
         steps:
         - name: Display Working Directory and List Files
