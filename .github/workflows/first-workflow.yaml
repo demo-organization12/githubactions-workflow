@@ -23,7 +23,7 @@ jobs:
   dependant-jobs:
     runs-on: windows-latest
     needs: run-shell-commands
-    steps: 
+    steps:  
       - name: echo a string
         run: Write-Output "Windows string" 
       
