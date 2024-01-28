@@ -23,6 +23,5 @@ jobs:
                 :link: Repository: ${{ github.repository }}
                 :pushpin: Branch: ${{ github.ref }}
                 author: ${{ github.event.head_commit.author.name }}
-              color: good
               channel: '${{ env.CHANNEL_ID }}'
             if: always()
