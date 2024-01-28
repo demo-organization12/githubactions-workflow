@@ -3,17 +3,12 @@ on: [push]
 
 env:
   SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK_URL}}
-  
+
 jobs:
     checkout-and-display-files:
         runs-on: ubuntu-latest
         steps:
-          - name: List files before checkout
-            run: ls -a
-          - name: files checkout
-            uses: actions/checkout@v4
-          - name: list files after checkout
-            run: ls -a
+          
 
           
           - name: Slack Notification
@@ -26,5 +21,20 @@ jobs:
                 :link: Repository: ${{ github.repository }}
                 :pushpin: Branch: ${{ github.ref }}
                 author: ${{ github.event.head_commit.author.name }}
+              channel: '${{ env.CHANNEL_ID }}'
+            if: always() 
+
+          - name: List files before checkout
+            run: ls -a
+          - name: files checkout
+            uses: actions/checkout@v4
+          - name: list files after checkout
+            run: ls -a
+
+          - name: Slack Notification
+            uses: act10ns/slack@v1
+            with:
+              status: ${{ job.status }}
+              steps: ${{ toJson(steps) }}
               channel: '${{ env.CHANNEL_ID }}'
             if: always()
