@@ -34,7 +34,10 @@ jobs:
           - name: Slack Notification
             uses: act10ns/slack@v1
             with:
-              status: ${{ job.status }}
-              steps: ${{ toJson(steps) }}
+              status: ${{ job.status }} for ${{ github.ref }}
+              message: |
+                :white_check_mark: Workflow ${GITHUB_WORKFLOW} job ${GITHUB_JOB} triggered by ${GITHUB_EVENT_NAME} is ${JOB_STATUS} for ${GITHUB_REF}
+                ${COMMIT_SHA} - ${COMMIT_COUNT} commits
               channel: '${{ env.CHANNEL_ID }}'
             if: always()
+          
