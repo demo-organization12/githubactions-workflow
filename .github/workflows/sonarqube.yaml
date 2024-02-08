@@ -1,0 +1,73 @@
+name: SonarQube
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - '*'
+
+env:
+  TASK_DEFINITION_BUCKET: ${{ secrets.TASK_DEFINITION_BUCKET }}
+  SONAR_HOST: ${{ secrets.SONAR_HOST }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  PROJECT_KEY: ${{ secrets.PROJECT_KEY }}
+  PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  
+
+jobs:
+  SonarScanner:
+    runs-on: ubuntu-latest
+    name: Sonar Scanner
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip wget nodejs
+          sudo wget https://${{ env.TASK_DEFINITION_BUCKET }}.s3.${{ env.AWS_REGION }}.amazonaws.com/sonarcache.zip
+          sudo mkdir -p /home/runner/.sonar
+          sudo unzip sonarcache.zip -d /home/runner/.sonar
+          sudo ls -ld /home/runner/.sonar/cache
+          sudo chmod -R 777 /home/runner/.sonar
+
+      - name: Install SonarQube Scanner
+        run: |
+          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
+          unzip sonar-scanner-cli-4.2.0.1873-linux.zip
+          sudo mv sonar-scanner-4.2.0.1873-linux /opt/sonar-scanner
+          sudo chmod +x /opt/sonar-scanner/bin/sonar-scanner
+
+      - name: Run SonarQube Analysis
+        run: |
+          export PATH="$PATH:/opt/sonar-scanner/bin"
+          sonar-scanner \
+            -Dsonar.projectKey=${{ env.PROJECT_KEY }} \
+            -Dsonar.projectName=${{ env.PROJECT_NAME }} \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=${{ env.SONAR_HOST }} \
+            -Dsonar.login=${{ env.SONAR_TOKEN }}
+
+      - name: SonarQube Quality Gate
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
