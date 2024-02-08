@@ -2,7 +2,7 @@ alert(true)
 alert(true)
 alert(true)
 alert(true)
-alert(!falue);
-alert(true);
+alert(true)
+alert(true)
 alert(false)
 
