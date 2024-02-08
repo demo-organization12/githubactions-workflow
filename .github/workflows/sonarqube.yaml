@@ -1,11 +1,9 @@
 name: SonarQube
   
 on:
-  push:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches:
-      - '*'
+
 
 env:
   TASK_DEFINITION_BUCKET: ${{ secrets.TASK_DEFINITION_BUCKET }}
