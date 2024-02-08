@@ -1,9 +1,9 @@
 name: SonarQube
   
 on:
+  push:
   pull_request:
     types: [opened, synchronize, reopened]
-
 
 env:
   TASK_DEFINITION_BUCKET: ${{ secrets.TASK_DEFINITION_BUCKET }}
@@ -67,6 +67,24 @@ jobs:
 
             
       - name: Results
+        id: sonar_results
         run: |
-          echo "See the results here: http://${SONAR_HOST}/dashboard?id=${PROJECT_NAME}"
-          
+          echo "::set-output name=sonar_url::http://${SONAR_HOST}/dashboard?id=${PROJECT_NAME}"
+      
+      - name: Comment on Pull Request
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { context, github } = require('@actions/github');
+
+            const comment = `
+            See the results here: [SonarQube Dashboard](${process.env.sonar_url})
+            `;
+
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
