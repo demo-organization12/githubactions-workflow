@@ -71,12 +71,18 @@ jobs:
       - name: Get SonarQube Quality Gate Status
         run: |
           SONAR_RESULT=$(curl -s "${SONAR_HOST}/api/qualitygates/project_status?projectKey=${PROJECT_KEY}" -u "${SONAR_TOKEN}:")
+          if [[ $? -ne 0 ]]; then
+            echo "Failed to fetch SonarQube Quality Gate status."
+            exit 1
+          fi
+          
           BUGS=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "bugs").status')
           VULNERABILITIES=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "vulnerabilities").status')
           SECURITY_HOTSPOTS=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "security_hotspots").status')
           CODE_SMELLS=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "code_smells").status')
           COVERAGE=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "coverage").actualValue')
           DUPLICATION=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "duplicated_lines_density").actualValue')
+
           echo "Kudos, SonarCloud Quality Gate passed!    Quality Gate passed"
           echo "Bug ${BUGS} Bugs"
           echo "Vulnerability ${VULNERABILITIES} Vulnerabilities"
@@ -84,26 +90,3 @@ jobs:
           echo "Code Smell ${CODE_SMELLS} Code Smells"
           echo "${COVERAGE}% Coverage"
           echo "${DUPLICATION}% Duplication"
-
-      - name: Comment on Pull Request
-        uses: actions/github-script@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }} 
-          script: |
-            const { context, github } = require('@actions/github');
-
-            const comment = `
-            Bug ${process.env.BUGS} Bugs
-            Vulnerability ${process.env.VULNERABILITIES} Vulnerabilities
-            Security Hotspot ${process.env.SECURITY_HOTSPOTS} Security Hotspots
-            Code Smell ${process.env.CODE_SMELLS} Code Smells
-            ${process.env.COVERAGE}% Coverage
-            ${process.env.DUPLICATION}% Duplication
-            `;
-
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
