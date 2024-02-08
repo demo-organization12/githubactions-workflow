@@ -28,65 +28,48 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '14'
+      # - name: Set up Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '14'
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y unzip wget nodejs
-          sudo wget https://${{ env.TASK_DEFINITION_BUCKET }}.s3.${{ env.AWS_REGION }}.amazonaws.com/sonarcache.zip
-          sudo mkdir -p /home/runner/.sonar
-          sudo unzip sonarcache.zip -d /home/runner/.sonar
-          sudo ls -ld /home/runner/.sonar/cache
-          sudo chmod -R 777 /home/runner/.sonar
+      # - name: Install dependencies
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y unzip wget nodejs
+      #     sudo wget https://${{ env.TASK_DEFINITION_BUCKET }}.s3.${{ env.AWS_REGION }}.amazonaws.com/sonarcache.zip
+      #     sudo mkdir -p /home/runner/.sonar
+      #     sudo unzip sonarcache.zip -d /home/runner/.sonar
+      #     sudo ls -ld /home/runner/.sonar/cache
+      #     sudo chmod -R 777 /home/runner/.sonar
 
-      - name: Install SonarQube Scanner
-        run: |
-          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
-          unzip sonar-scanner-cli-4.2.0.1873-linux.zip
-          sudo mv sonar-scanner-4.2.0.1873-linux /opt/sonar-scanner
-          sudo chmod +x /opt/sonar-scanner/bin/sonar-scanner
+      # - name: Install SonarQube Scanner
+      #   run: |
+      #     wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
+      #     unzip sonar-scanner-cli-4.2.0.1873-linux.zip
+      #     sudo mv sonar-scanner-4.2.0.1873-linux /opt/sonar-scanner
+      #     sudo chmod +x /opt/sonar-scanner/bin/sonar-scanner
 
-      - name: Run SonarQube Analysis
-        run: |
-          export PATH="$PATH:/opt/sonar-scanner/bin"
-          sonar-scanner \
-            -Dsonar.projectKey=${{ env.PROJECT_KEY }} \
-            -Dsonar.projectName=${{ env.PROJECT_NAME }} \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=${{ env.SONAR_HOST }} \
-            -Dsonar.login=${{ env.SONAR_TOKEN }}
+      # - name: Run SonarQube Analysis
+      #   run: |
+      #     export PATH="$PATH:/opt/sonar-scanner/bin"
+      #     sonar-scanner \
+      #       -Dsonar.projectKey=${{ env.PROJECT_KEY }} \
+      #       -Dsonar.projectName=${{ env.PROJECT_NAME }} \
+      #       -Dsonar.sources=. \
+      #       -Dsonar.host.url=${{ env.SONAR_HOST }} \
+      #       -Dsonar.login=${{ env.SONAR_TOKEN }}
 
             
-      - name: Get SonarQube Quality Gate Status
-        run: |
-          SONAR_RESULT=$(curl -s "${SONAR_HOST}/api/qualitygates/project_status?projectKey=${PROJECT_KEY}" -u "${SONAR_TOKEN}:")
-          if [[ $? -ne 0 ]]; then
-            echo "Failed to fetch SonarQube Quality Gate status."
-            exit 1
-          fi
-          
-          BUGS=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "bugs").status')
-          VULNERABILITIES=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "vulnerabilities").status')
-          SECURITY_HOTSPOTS=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "security_hotspots").status')
-          CODE_SMELLS=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "code_smells").status')
-          COVERAGE=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "coverage").actualValue')
-          DUPLICATION=$(echo $SONAR_RESULT | jq -r '.projectStatus.conditions[] | select(.metric == "duplicated_lines_density").actualValue')
-
-          echo "Kudos, SonarCloud Quality Gate passed!    Quality Gate passed"
-          echo "Bug ${BUGS} Bugs"
-          echo "Vulnerability ${VULNERABILITIES} Vulnerabilities"
-          echo "Security Hotspot ${SECURITY_HOTSPOTS} Security Hotspots"
-          echo "Code Smell ${CODE_SMELLS} Code Smells"
-          echo "${COVERAGE}% Coverage"
-          echo "${DUPLICATION}% Duplication"
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "http://{{ env.SONAR_HOST }}"   
