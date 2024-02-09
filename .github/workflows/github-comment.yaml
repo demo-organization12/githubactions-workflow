@@ -1,24 +1,15 @@
-name: Comment on Process Completion
-on:
-  push:
+on: pull_request
 
 jobs:
-  comment:
+  example_comment_pr:
     runs-on: ubuntu-latest
+    name: An example job to comment a PR
     steps:
-      - name: Add a comment
-        uses: actions/github-script@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { context, GitHub } = require('@actions/github');
-            const github = new GitHub(process.env.GITHUB_TOKEN);
-            const { owner, repo } = context.repo;
-            const comment = 'Process completed! 🎉';
-            github.issues.createComment({
-                owner,
-                repo,
-                issue_number: context.payload.workflow_run.head_repository.pull_requests[0].number,
-                body: comment
-            });
+      - name: Checkout
+        uses: actions/checkout@v3
 
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            Hello world ! :wave:
